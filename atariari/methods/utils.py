@@ -13,7 +13,7 @@ from collections import defaultdict
 # methods that need encoder trained before
 train_encoder_methods = ['cpc', 'jsd-stdim', 'vae', "naff", "infonce-stdim", "global-infonce-stdim",
                          "global-local-infonce-stdim", "dim"]
-probe_only_methods = ["supervised", "random-cnn", "majority", "pretrained-rl-agent"]
+probe_only_methods = ["supervised", "random-cnn", "majority", "pretrained-rl-agent", "custom"]
 
 
 def get_argparser():
@@ -23,10 +23,10 @@ def get_argparser():
     parser.add_argument('--num-frame-stack', type=int, default=1,
                         help='Number of frames to stack for a state')
     parser.add_argument('--no-downsample', action='store_true', default=True,
-                        help='Whether to use a linear classifier')
+                        help='Whether to downsample 160x210 -> 84x84')
     parser.add_argument('--pretraining-steps', type=int, default=100000,
                         help='Number of steps to pretrain representations (default: 100000)')
-    parser.add_argument('--probe-steps', type=int, default=50000,
+    parser.add_argument('--probe-steps', type=int, default=35000,
                         help='Number of steps to train probes (default: 30000 )')
     #     parser.add_argument('--probe-test-steps', type=int, default=15000,
     #                         help='Number of steps to train probes (default: 15000 )')

@@ -9,22 +9,30 @@ import sys
 from atariari.methods.majority import majority_baseline
 from atariari.benchmark.episodes import get_episodes
 
+# Fix modules for pickle
+import sys
+from rainbow import model
+sys.modules['model'] = model
+
+# Turn off wandb nagging
+import os
+os.environ["WANDB_MODE"] = "dryrun"
 
 def run_probe(args):
     wandb.config.update(vars(args))
-    tr_eps, val_eps, tr_labels, val_labels, test_eps, test_labels = get_episodes(steps=args.probe_steps,
-                                                                                 env_name=args.env_name,
-                                                                                 seed=args.seed,
-                                                                                 num_processes=args.num_processes,
-                                                                                 num_frame_stack=args.num_frame_stack,
-                                                                                 downsample=not args.no_downsample,
-                                                                                 color=args.color,
-                                                                                 entropy_threshold=args.entropy_threshold,
-                                                                                 collect_mode=args.probe_collect_mode,
-                                                                                 train_mode="probe",
-                                                                                 checkpoint_index=args.checkpoint_index,
-                                                                                 min_episode_length=args.batch_size)
-
+    episodes = get_episodes(steps=args.probe_steps,
+                            env_name=args.env_name,
+                            seed=args.seed,
+                            num_processes=args.num_processes,
+                            num_frame_stack=args.num_frame_stack,
+                            downsample=not args.no_downsample,
+                            color=args.color,
+                            entropy_threshold=args.entropy_threshold,
+                            collect_mode=args.probe_collect_mode,
+                            train_mode="probe",
+                            checkpoint_index=args.checkpoint_index,
+                            min_episode_length=args.batch_size)
+    tr_eps, val_eps, tr_labels, val_labels, test_eps, test_labels = episodes
     print("got episodes!")
 
     if args.train_encoder and args.method in train_encoder_methods:
@@ -49,6 +57,9 @@ def run_probe(args):
         if args.weights_path == "None":
             if args.method not in probe_only_methods:
                 sys.stderr.write("Probing without loading in encoder weights! Are sure you want to do that??")
+        elif args.method == "custom":
+            encoder, feature_size = torch.load(args.weights_path)
+            encoder.eval()
         else:
             print("Print loading in encoder weights from probe of type {} from the following path: {}"
                   .format(args.method, args.weights_path))
@@ -69,7 +80,8 @@ def run_probe(args):
                                patience=args.patience,
                                wandb=wandb,
                                fully_supervised=(args.method == "supervised"),
-                               save_dir=wandb.run.dir)
+                               save_dir=wandb.run.dir,
+                               representation_len=args.feature_size)
 
         trainer.train(tr_eps, val_eps, tr_labels, val_labels)
         test_acc, test_f1score = trainer.test(test_eps, test_labels)
@@ -85,6 +97,14 @@ def run_probe(args):
 if __name__ == "__main__":
     parser = get_argparser()
     args = parser.parse_args()
+    if args.method == 'custom':
+        args.env_name = 'QbertNoFrameskip-v4'
+        args.weights_path = 'pretrained_markov_phi_model.pth'
+        args.no_downsample = False
+        args.num_frame_stack = 4
+        # args.seed = ?
+        args.train_encoder = False
+        args.feature_size = 576
     tags = ['probe']
-    wandb.init(project=args.wandb_proj, entity=args.wandb_entity, tags=tags)
+    wandb.init(project=args.wandb_proj, entity=args.wandb_entity, tags=tags, anonymous='allow')
     run_probe(args)

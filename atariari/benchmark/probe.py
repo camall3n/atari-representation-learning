@@ -230,9 +230,9 @@ class ProbeTrainer():
 
         acc_dict, f1_dict = postprocess_raw_metrics(acc_dict, f1_dict)
 
-        print("""In our paper, we report F1 scores and accuracies averaged across each category. 
+        print("""In our paper, we report F1 scores and accuracies averaged across each category.
               That is, we take a mean across all state variables in a category to get the average score for that category.
-              Then we average all the category averages to get the final score that we report per game for each method. 
+              Then we average all the category averages to get the final score that we report per game for each method.
               These scores are called \'across_categories_avg_acc\' and \'across_categories_avg_f1\' respectively
               We do this to prevent categories with large number of state variables dominating the mean F1 score.
               """)
@@ -276,6 +276,3 @@ def compute_category_avgs(metric_dict):
         category_mean = np.mean(category_values)
         category_dict[category_name + "_avg"] = category_mean
     return category_dict
-
-
-
